@@ -11,12 +11,12 @@
 ```sql
 SELECT
     purchase_month,
-    AVG(CASE WHEN is_late THEN 0.0 ELSE 1.0 END) AS on_time_rate
+    1 - AVG(CASE WHEN is_late THEN 1.0 ELSE 0.0 END) AS on_time_rate
 FROM fct_orders
 WHERE delivered_ts IS NOT NULL
   AND is_late IS NOT NULL
 GROUP BY purchase_month
-ORDER BY on_time_rate ASC, purchase_month ASC
+ORDER BY on_time_rate ASC
 LIMIT 1
 ```
 
@@ -29,6 +29,7 @@ SELECT
     AVG(transit_days) AS avg_transit_days
 FROM fct_orders
 WHERE transit_days IS NOT NULL
+  AND seller_state IS NOT NULL
 GROUP BY seller_state
 ORDER BY avg_transit_days DESC
 LIMIT 3

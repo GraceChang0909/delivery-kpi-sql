@@ -67,13 +67,14 @@ def extract_sql(text: str) -> str:
     return (m.group(1) if m else text).strip().rstrip(";")
 
 
-def call_llm(user: str, system: str | None = None, max_tokens: int = 1024) -> str:
+def call_llm(user: str, system: str | None = None, max_tokens: int = 4096) -> str:
     kwargs = {"system": system} if system else {}
     resp = client().messages.create(
         model=MODEL, max_tokens=max_tokens,
         messages=[{"role": "user", "content": user}], **kwargs,
     )
-    return resp.content[0].text
+    # the response may start with a thinking block — keep only the text blocks
+    return "".join(b.text for b in resp.content if b.type == "text")
 
 
 def generate_sql(question: str, system: str) -> str:
@@ -84,7 +85,7 @@ def explain(question: str, sql: str, df) -> str:
     return call_llm(
         f"Question: {question}\n\nSQL:\n{sql}\n\nResult:\n{df.head(30).to_string()}\n\n"
         "Answer the question in 1-3 sentences using the result.",
-        max_tokens=400,
+        max_tokens=2048,
     )
 
 

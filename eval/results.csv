@@ -12,72 +12,71 @@ FROM fct_orders
 WHERE purchase_month = DATE '2017-11-01'",[{'n_orders': 7279}],[{'n_orders': 7279}]
 s03,simple,v0,How many orders were delivered late?,True,,"SELECT COUNT(*) AS late_orders
 FROM fct_orders
-WHERE is_late
+WHERE is_late = TRUE
   AND delivered_ts IS NOT NULL",[{'late_orders': 6467}],[{'n_late': 6467}]
 s03,simple,v1,How many orders were delivered late?,True,,"SELECT COUNT(*) AS late_orders
 FROM fct_orders
 WHERE is_late",[{'late_orders': 6467}],[{'n_late': 6467}]
-s04,simple,v0,Which state has the most orders?,True,,"SELECT customer_state, COUNT(DISTINCT order_id) AS order_count
+s04,simple,v0,Which state has the most orders?,True,,"SELECT customer_state
 FROM fct_orders
 GROUP BY customer_state
-ORDER BY order_count DESC
-LIMIT 1","[{'customer_state': 'SP', 'order_count': 40412}]",[{'customer_state': 'SP'}]
+ORDER BY COUNT(DISTINCT order_id) DESC
+LIMIT 1",[{'customer_state': 'SP'}],[{'customer_state': 'SP'}]
 s04,simple,v1,Which state has the most orders?,True,,"SELECT customer_state, COUNT(*) AS n_orders
 FROM fct_orders
 GROUP BY customer_state
 ORDER BY n_orders DESC
 LIMIT 1","[{'customer_state': 'SP', 'n_orders': 40412}]",[{'customer_state': 'SP'}]
-s05,simple,v0,How many orders were shipped across states?,True,,"SELECT COUNT(DISTINCT order_id) AS cross_state_shipped_orders
+s05,simple,v0,How many orders were shipped across states?,True,,"SELECT COUNT(DISTINCT order_id) AS cross_state_orders
 FROM fct_orders
-WHERE is_cross_state
-  AND carrier_ts IS NOT NULL",[{'cross_state_shipped_orders': 61589}],[{'n_orders': 61589}]
+WHERE is_cross_state",[{'cross_state_orders': 61589}],[{'n_orders': 61589}]
 s05,simple,v1,How many orders were shipped across states?,True,,"SELECT COUNT(*) AS cross_state_orders
 FROM fct_orders
 WHERE is_cross_state",[{'cross_state_orders': 61589}],[{'n_orders': 61589}]
 k01,kpi,v0,What is the overall on-time delivery rate?,True,,"SELECT
-    ROUND(100.0 * AVG(CASE WHEN is_late THEN 0 ELSE 1 END), 2) AS on_time_delivery_rate_pct
+    COUNT(*) FILTER (WHERE NOT is_late) * 1.0 / COUNT(*) AS on_time_delivery_rate
 FROM fct_orders
 WHERE delivered_ts IS NOT NULL
-  AND is_late IS NOT NULL",[{'on_time_delivery_rate_pct': 93.28}],[{'on_time_rate_pct': 93.28}]
+  AND is_late IS NOT NULL",[{'on_time_delivery_rate': 0.9327873452716255}],[{'on_time_rate_pct': 93.28}]
 k01,kpi,v1,What is the overall on-time delivery rate?,True,,"SELECT ROUND(100.0 * AVG(CASE WHEN is_late THEN 0 ELSE 1 END), 2) AS on_time_rate_pct
 FROM fct_orders",[{'on_time_rate_pct': 93.28}],[{'on_time_rate_pct': 93.28}]
-k02,kpi,v0,What is the average delivery lead time?,True,,"SELECT AVG(total_lead_days) AS avg_total_lead_days
+k02,kpi,v0,What is the average delivery lead time?,True,,"SELECT AVG(total_lead_days) AS avg_delivery_lead_time_days
 FROM fct_orders
-WHERE delivered_ts IS NOT NULL",[{'avg_total_lead_days': 12.480468732136728}],[{'avg_lead_days': 12.48}]
+WHERE delivered_ts IS NOT NULL",[{'avg_delivery_lead_time_days': 12.480468732136728}],[{'avg_lead_days': 12.48}]
 k02,kpi,v1,What is the average delivery lead time?,True,,"SELECT ROUND(AVG(total_lead_days), 2) AS avg_lead_time_days
 FROM fct_orders",[{'avg_lead_time_days': 12.48}],[{'avg_lead_days': 12.48}]
 k03,kpi,v0,"When an order is late, how many days late is it on average?",True,,"SELECT AVG(delay_days) AS avg_days_late
 FROM fct_orders
-WHERE is_late",[{'avg_days_late': 9.594247719189733}],[{'avg_delay_days': 9.59}]
+WHERE is_late = TRUE
+  AND delay_days IS NOT NULL",[{'avg_days_late': 9.594247719189733}],[{'avg_delay_days': 9.59}]
 k03,kpi,v1,"When an order is late, how many days late is it on average?",True,,"SELECT ROUND(AVG(delay_days), 2) AS avg_delay_days_of_late_orders
 FROM fct_orders
 WHERE is_late",[{'avg_delay_days_of_late_orders': 9.59}],[{'avg_delay_days': 9.59}]
-k04,kpi,v0,"On average, how long does it take from purchase until the order is shipped?",True,,"SELECT AVG(handling_days) AS avg_days_purchase_to_shipped
+k04,kpi,v0,"On average, how long does it take from purchase until the order is shipped?",True,,"SELECT AVG(handling_days) AS avg_handling_days
 FROM fct_orders
-WHERE handling_days IS NOT NULL",[{'avg_days_purchase_to_shipped': 3.2287885716660893}],[{'avg_handling_days': 3.23}]
+WHERE handling_days IS NOT NULL",[{'avg_handling_days': 3.2287885716660893}],[{'avg_handling_days': 3.23}]
 k04,kpi,v1,"On average, how long does it take from purchase until the order is shipped?",True,,"SELECT ROUND(AVG(handling_days), 2) AS avg_handling_days
 FROM fct_orders",[{'avg_handling_days': 3.23}],[{'avg_handling_days': 3.23}]
 k05,kpi,v0,What was the on-time rate in March 2018?,True,,"SELECT
     AVG(CASE WHEN is_late THEN 0.0 ELSE 1.0 END) AS on_time_rate
 FROM fct_orders
 WHERE purchase_month = DATE '2018-03-01'
-  AND delivered_ts IS NOT NULL
-  AND is_late IS NOT NULL",[{'on_time_rate': 0.8104827192230791}],[{'on_time_rate_pct': 81.05}]
+  AND delivered_ts IS NOT NULL",[{'on_time_rate': 0.8104827192230791}],[{'on_time_rate_pct': 81.05}]
 k05,kpi,v1,What was the on-time rate in March 2018?,True,,"SELECT ROUND(100.0 * AVG(CASE WHEN is_late THEN 0 ELSE 1 END), 2) AS on_time_rate_pct
 FROM fct_orders
 WHERE purchase_month = DATE '2018-03-01'",[{'on_time_rate_pct': 81.05}],[{'on_time_rate_pct': 81.05}]
 c01,comparison,v0,Compare the late rate of cross-state and same-state orders.,True,,"SELECT
     is_cross_state,
-    COUNT(*) AS n_orders,
     AVG(CASE WHEN is_late THEN 1.0 ELSE 0.0 END) AS late_rate
 FROM fct_orders
-WHERE is_late IS NOT NULL
+WHERE delivered_ts IS NOT NULL
+  AND is_cross_state IS NOT NULL
 GROUP BY is_cross_state
-ORDER BY is_cross_state","[{'is_cross_state': False, 'n_orders': 34628, 'late_rate': 0.044790343074968236}, {'is_cross_state': True, 'n_orders': 61589, 'late_rate': 0.07981944827810161}]","[{'is_cross_state': False, 'late_rate_pct': 4.48}, {'is_cross_state': True, 'late_rate_pct': 7.98}]"
+ORDER BY is_cross_state","[{'is_cross_state': False, 'late_rate': 0.044790343074968236}, {'is_cross_state': True, 'late_rate': 0.07981944827810161}]","[{'is_cross_state': False, 'late_rate_pct': 4.48}, {'is_cross_state': True, 'late_rate_pct': 7.98}]"
 c01,comparison,v1,Compare the late rate of cross-state and same-state orders.,True,,"SELECT
-  is_cross_state,
-  COUNT(*) AS n_orders,
-  ROUND(100.0 * AVG(CASE WHEN is_late THEN 1 ELSE 0 END), 2) AS late_rate_pct
+    is_cross_state,
+    COUNT(*) AS n_orders,
+    ROUND(100.0 * AVG(CASE WHEN is_late THEN 1 ELSE 0 END), 2) AS late_rate_pct
 FROM fct_orders
 GROUP BY is_cross_state
 ORDER BY is_cross_state DESC","[{'is_cross_state': True, 'n_orders': 61589, 'late_rate_pct': 7.98}, {'is_cross_state': False, 'n_orders': 34628, 'late_rate_pct': 4.48}]","[{'is_cross_state': False, 'late_rate_pct': 4.48}, {'is_cross_state': True, 'late_rate_pct': 7.98}]"
@@ -88,11 +87,11 @@ FROM fct_orders
 WHERE delivered_ts IS NOT NULL
   AND is_late IS NOT NULL
 GROUP BY customer_state
-ORDER BY on_time_rate ASC
+ORDER BY on_time_rate ASC, customer_state
 LIMIT 5","[{'customer_state': 'AL', 'on_time_rate': 0.7858942065491183}, {'customer_state': 'MA', 'on_time_rate': 0.8260869565217391}, {'customer_state': 'SE', 'on_time_rate': 0.8524096385542169}, {'customer_state': 'PI', 'on_time_rate': 0.8641188959660298}, {'customer_state': 'CE', 'on_time_rate': 0.8649921507064364}]","[{'customer_state': 'AL', 'on_time_rate_pct': 78.59}, {'customer_state': 'MA', 'on_time_rate_pct': 82.61}, {'customer_state': 'SE', 'on_time_rate_pct': 85.24}, {'customer_state': 'PI', 'on_time_rate_pct': 86.41}, {'customer_state': 'CE', 'on_time_rate_pct': 86.5}]"
 c02,comparison,v1,Which 5 states have the worst on-time rate?,True,,"SELECT
-  customer_state,
-  ROUND(100.0 * AVG(CASE WHEN is_late THEN 0 ELSE 1 END), 2) AS on_time_rate_pct
+    customer_state,
+    ROUND(100.0 * AVG(CASE WHEN is_late THEN 0 ELSE 1 END), 2) AS on_time_rate_pct
 FROM fct_orders
 GROUP BY customer_state
 HAVING COUNT(*) >= 100
@@ -100,12 +99,12 @@ ORDER BY on_time_rate_pct ASC
 LIMIT 5","[{'customer_state': 'AL', 'on_time_rate_pct': 78.59}, {'customer_state': 'MA', 'on_time_rate_pct': 82.61}, {'customer_state': 'SE', 'on_time_rate_pct': 85.24}, {'customer_state': 'PI', 'on_time_rate_pct': 86.41}, {'customer_state': 'CE', 'on_time_rate_pct': 86.5}]","[{'customer_state': 'AL', 'on_time_rate_pct': 78.59}, {'customer_state': 'MA', 'on_time_rate_pct': 82.61}, {'customer_state': 'SE', 'on_time_rate_pct': 85.24}, {'customer_state': 'PI', 'on_time_rate_pct': 86.41}, {'customer_state': 'CE', 'on_time_rate_pct': 86.5}]"
 c03,comparison,v0,Which month had the lowest on-time rate?,False,,"SELECT
     purchase_month,
-    AVG(CASE WHEN is_late THEN 0.0 ELSE 1.0 END) AS on_time_rate
+    1 - AVG(CASE WHEN is_late THEN 1.0 ELSE 0.0 END) AS on_time_rate
 FROM fct_orders
 WHERE delivered_ts IS NOT NULL
   AND is_late IS NOT NULL
 GROUP BY purchase_month
-ORDER BY on_time_rate ASC, purchase_month ASC
+ORDER BY on_time_rate ASC
 LIMIT 1","[{'purchase_month': Timestamp('2016-09-01 00:00:00'), 'on_time_rate': 0.0}]","[{'purchase_month': Timestamp('2018-03-01 00:00:00'), 'on_time_rate_pct': 81.05}]"
 c03,comparison,v1,Which month had the lowest on-time rate?,True,,"SELECT
   purchase_month,
@@ -120,6 +119,7 @@ c04,comparison,v0,Which 3 seller states have the longest average transit time?,F
     AVG(transit_days) AS avg_transit_days
 FROM fct_orders
 WHERE transit_days IS NOT NULL
+  AND seller_state IS NOT NULL
 GROUP BY seller_state
 ORDER BY avg_transit_days DESC
 LIMIT 3","[{'seller_state': 'AM', 'avg_transit_days': 44.41}, {'seller_state': 'RO', 'avg_transit_days': 15.810000000000002}, {'seller_state': 'CE', 'avg_transit_days': 13.078690476190477}]","[{'seller_state': 'MA', 'avg_transit_days': 12.93}, {'seller_state': 'MT', 'avg_transit_days': 11.44}, {'seller_state': 'PE', 'avg_transit_days': 10.61}]"
@@ -133,13 +133,13 @@ ORDER BY AVG(transit_days) DESC
 LIMIT 3","[{'seller_state': 'MA', 'avg_transit_days': 12.93}, {'seller_state': 'MT', 'avg_transit_days': 11.44}, {'seller_state': 'PE', 'avg_transit_days': 10.61}]","[{'seller_state': 'MA', 'avg_transit_days': 12.93}, {'seller_state': 'MT', 'avg_transit_days': 11.44}, {'seller_state': 'PE', 'avg_transit_days': 10.61}]"
 c05,comparison,v0,Is the on-time rate better in 2018 or 2017? Show the rate for each year.,True,,"SELECT
     EXTRACT(year FROM purchase_month) AS purchase_year,
-    COUNT(*) AS delivered_orders,
-    AVG(CASE WHEN is_late THEN 0.0 ELSE 1.0 END) AS on_time_rate
+    ROUND(AVG(CASE WHEN is_late THEN 0.0 ELSE 1.0 END), 4) AS on_time_rate
 FROM fct_orders
 WHERE delivered_ts IS NOT NULL
+  AND is_late IS NOT NULL
   AND EXTRACT(year FROM purchase_month) IN (2017, 2018)
 GROUP BY purchase_year
-ORDER BY purchase_year","[{'purchase_year': 2017, 'delivered_orders': 43358, 'on_time_rate': 0.944554638129065}, {'purchase_year': 2018, 'delivered_orders': 52596, 'on_time_rate': 0.9228078180850254}]","[{'yr': 2017, 'on_time_rate_pct': 94.46}, {'yr': 2018, 'on_time_rate_pct': 92.28}]"
+ORDER BY purchase_year","[{'purchase_year': 2017, 'on_time_rate': 0.9446}, {'purchase_year': 2018, 'on_time_rate': 0.9228}]","[{'yr': 2017, 'on_time_rate_pct': 94.46}, {'yr': 2018, 'on_time_rate_pct': 92.28}]"
 c05,comparison,v1,Is the on-time rate better in 2018 or 2017? Show the rate for each year.,True,,"SELECT
     EXTRACT(year FROM purchase_month) AS purchase_year,
     ROUND(100.0 * AVG(CASE WHEN is_late THEN 0 ELSE 1 END), 2) AS on_time_rate_pct
