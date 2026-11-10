@@ -1,0 +1,102 @@
+# 15 business questions: 5 simple / 5 kpi / 5 comparison.
+# gold_sql is the reference answer. run_eval.py compares result VALUES (see results_match).
+
+# ---------- simple ----------
+- id: s01
+  category: simple
+  question: "How many delivered orders are there?"
+  gold_sql: |
+    SELECT COUNT(*) AS n_orders FROM fct_orders
+
+- id: s02
+  category: simple
+  question: "How many orders were purchased in November 2017?"
+  gold_sql: |
+    SELECT COUNT(*) AS n_orders FROM fct_orders WHERE purchase_month = DATE '2017-11-01'
+
+- id: s03
+  category: simple
+  question: "How many orders were delivered late?"
+  gold_sql: |
+    SELECT COUNT(*) AS n_late FROM fct_orders WHERE is_late
+
+- id: s04
+  category: simple
+  question: "Which state has the most orders?"
+  gold_sql: |
+    SELECT customer_state FROM fct_orders GROUP BY 1 ORDER BY COUNT(*) DESC LIMIT 1
+
+- id: s05
+  category: simple
+  question: "How many orders were shipped across states?"
+  gold_sql: |
+    SELECT COUNT(*) AS n_orders FROM fct_orders WHERE is_cross_state
+
+# ---------- kpi ----------
+- id: k01
+  category: kpi
+  question: "What is the overall on-time delivery rate?"
+  gold_sql: |
+    SELECT ROUND(100.0 * AVG(CASE WHEN is_late THEN 0 ELSE 1 END), 2) AS on_time_rate_pct FROM fct_orders
+
+- id: k02
+  category: kpi
+  question: "What is the average delivery lead time?"
+  gold_sql: |
+    SELECT ROUND(AVG(total_lead_days), 2) AS avg_lead_days FROM fct_orders
+
+- id: k03
+  category: kpi
+  question: "When an order is late, how many days late is it on average?"
+  gold_sql: |
+    SELECT ROUND(AVG(delay_days), 2) AS avg_delay_days FROM fct_orders WHERE is_late
+
+- id: k04
+  category: kpi
+  question: "On average, how long does it take from purchase until the order is shipped?"
+  gold_sql: |
+    SELECT ROUND(AVG(handling_days), 2) AS avg_handling_days FROM fct_orders
+
+- id: k05
+  category: kpi
+  question: "What was the on-time rate in March 2018?"
+  gold_sql: |
+    SELECT ROUND(100.0 * AVG(CASE WHEN is_late THEN 0 ELSE 1 END), 2) AS on_time_rate_pct
+    FROM fct_orders WHERE purchase_month = DATE '2018-03-01'
+
+# ---------- comparison ----------
+- id: c01
+  category: comparison
+  question: "Compare the late rate of cross-state and same-state orders."
+  gold_sql: |
+    SELECT is_cross_state, ROUND(100.0 * AVG(is_late::INT), 2) AS late_rate_pct
+    FROM fct_orders GROUP BY 1
+
+- id: c02
+  category: comparison
+  question: "Which 5 states have the worst on-time rate?"
+  gold_sql: |
+    SELECT customer_state, ROUND(100.0 * AVG(CASE WHEN is_late THEN 0 ELSE 1 END), 2) AS on_time_rate_pct
+    FROM fct_orders GROUP BY 1 HAVING COUNT(*) >= 100 ORDER BY 2 LIMIT 5
+
+- id: c03
+  category: comparison
+  question: "Which month had the lowest on-time rate?"
+  gold_sql: |
+    SELECT purchase_month, ROUND(100.0 * AVG(CASE WHEN is_late THEN 0 ELSE 1 END), 2) AS on_time_rate_pct
+    FROM fct_orders WHERE purchase_month BETWEEN DATE '2017-01-01' AND DATE '2018-08-01'
+    GROUP BY 1 ORDER BY 2 LIMIT 1
+
+- id: c04
+  category: comparison
+  question: "Which 3 seller states have the longest average transit time?"
+  gold_sql: |
+    SELECT seller_state, ROUND(AVG(transit_days), 2) AS avg_transit_days
+    FROM fct_orders GROUP BY 1 HAVING COUNT(*) >= 100 ORDER BY 2 DESC LIMIT 3
+
+- id: c05
+  category: comparison
+  question: "Is the on-time rate better in 2018 or 2017? Show the rate for each year."
+  gold_sql: |
+    SELECT year(purchase_month) AS yr, ROUND(100.0 * AVG(CASE WHEN is_late THEN 0 ELSE 1 END), 2) AS on_time_rate_pct
+    FROM fct_orders WHERE year(purchase_month) IN (2017, 2018) GROUP BY 1
